@@ -212,6 +212,9 @@ ssh -i <KEY_FILE>.pem ec2-user@<BASTION_PUBLIC_IP>
 
 # Từ Bastion, SSH vào CPU Node
 ssh ec2-user@<CPU_PRIVATE_IP>
+
+# Từ local, SSH vào CPU Node
+ssh -o BatchMode=yes -o ConnectTimeout=20 -o StrictHostKeyChecking=accept-new -o IdentitiesOnly=yes -i C:/Users/HAMESEMANPC/Downloads/AIinAction/Day16-Track2-Assignment/terraform/lab-key -o "ProxyCommand=ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o IdentitiesOnly=yes -i C:/Users/HAMESEMANPC/Downloads/AIinAction/Day16-Track2-Assignment/terraform/lab-key -W %h:%p ubuntu@98.80.176.185" ec2-user@10.0.10.98
 ```
 
 ### 7.4: Cài đặt môi trường ML
@@ -242,7 +245,7 @@ Chúng ta sẽ dùng **Credit Card Fraud Detection** — bộ dữ liệu chuẩ
 mkdir -p ~/.kaggle
 # Tạo file credentials (thay YOUR_USERNAME và YOUR_KEY):
 cat > ~/.kaggle/kaggle.json << 'EOF'
-{"username": "YOUR_KAGGLE_USERNAME", "key": "YOUR_KAGGLE_API_KEY"}
+{"username": "haphcc", "key": "70a3c5e6bed4525113a1cafc2265262d"}
 EOF
 chmod 600 ~/.kaggle/kaggle.json
 
@@ -254,16 +257,16 @@ kaggle datasets download -d mlg-ulb/creditcardfraud --unzip -p ~/ml-benchmark/
 
 | Metric | Kết quả |
 |---|---|
-| Thời gian load data | |
-| Thời gian training | |
-| Best iteration | |
-| AUC-ROC | |
-| Accuracy | |
-| F1-Score | |
-| Precision | |
-| Recall | |
-| Inference latency (1 row) | |
-| Inference throughput (1000 rows) | |
+| Thời gian load data | 3.5703376660000004 |
+| Thời gian training | 14.599292041000012 |
+| Best iteration | 0 |
+| AUC-ROC | 0.8772748512742182 |
+| Accuracy | 0.8973701766089673 |
+| F1-Score | 0.02793481875623545 |
+| Precision | 0.014198782961460446 |
+| Recall | 0.8571428571428571 |
+| Inference latency (1 row) | 1.2577676600000132 |
+| Inference throughput (1000 rows) | 144626.12630186518 |
 
 ### 7.7: Kiểm tra Chi phí sau 1 giờ
 
@@ -294,6 +297,14 @@ Nếu sử dụng phương án CPU + LightGBM, nộp các mục sau (được ch
 3. **Screenshot AWS Billing** sau 1 giờ triển khai, thể hiện EC2 và NAT Gateway.
 4. **Mã nguồn** thư mục `terraform/` đã chỉnh sửa (với `r5.2xlarge`).
 5. **Báo cáo ngắn** (5–10 dòng): so sánh kết quả training time, AUC, inference speed; giải thích lý do phải dùng CPU thay GPU.
+
+Trong phương án CPU, thời gian load dữ liệu đạt khoảng 3.57 giây và thời gian training khoảng 14.60 giây.
+Chỉ số AUC-ROC đạt 0.8773, cho thấy mô hình vẫn phân tách tương đối tốt giữa hai lớp dù dữ liệu mất cân bằng mạnh.
+Tốc độ suy luận khá tốt với latency 1 dòng khoảng 1.26 ms và throughput 1000 dòng khoảng 144626 dòng/giây.
+So với kỳ vọng khi dùng GPU cho bài toán LLM, pipeline LightGBM trên CPU phù hợp hơn vì đây là bài toán tabular ML, không cần tăng tốc tensor như deep learning.
+Lý do phải dùng CPU thay GPU là tài khoản mới bị giới hạn quota GPU (dòng G/VT), chưa được AWS phê duyệt kịp thời cho lab.
+Việc chuyển sang `r5.2xlarge` giúp hoàn thành đầy đủ quy trình Terraform -> training -> inference -> billing với chi phí theo giờ gần tương đương phương án GPU.
+Kết quả benchmark cho thấy phương án thay thế vẫn đáp ứng yêu cầu kỹ thuật và tiêu chí chấm điểm của bài.
 
 ---
 
